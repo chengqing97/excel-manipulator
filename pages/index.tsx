@@ -1,8 +1,76 @@
 import Head from 'next/head'
 import Image from 'next/image'
 import styles from '../styles/Home.module.css'
+import XLSX from "xlsx";
+import {useState} from "react"
+import {saveAs} from "file-saver"
+
+// const workbook = xlsx.readFile("formData1")
+// const worksheet = workbook.Sheets["sheentname"]
+// const data = xlsx.utils.sheet_to_json(worksheet)
+
+// const newData = data.map(record=>{
+//   record.Net = record.Sales - record.Cost
+//   return record
+// })
+
+// const newWorkbook =xlsx.utils.book_new()
+// const newWorksheet = xlsx.utils.json_to_sheet(newData)
+// xlsx.utils.book_append_sheet(newWorkbook,newWorksheet,"New data")
+// xlsx.writeFile(newWorkbook,"New Data File.xlsx")
 
 export default function Home() {
+  const [file1, setFile1] = useState({});
+  const [file2, setFile2] = useState({});
+
+  const onChange1 = (e: React.ChangeEvent<HTMLInputElement>) => {
+    var files = e.target.files, f = files[0];
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var data = new Uint8Array(e.target.result);
+      var workbook = XLSX.read(data, {type: 'array'});
+      setFile1(workbook);
+    };
+    reader.readAsArrayBuffer(f);
+  };
+  const onChange2 = (e: React.ChangeEvent<HTMLInputElement>) => {
+    var files = e.target.files, f = files[0];
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var data = new Uint8Array(e.target.result);
+      var workbook = XLSX.read(data, {type: 'array'});
+      setFile2(workbook);
+    };
+    reader.readAsArrayBuffer(f);
+  };
+
+  const onSubmit = async e => {
+    e.preventDefault();
+    //convert Excel to JSON
+    const worksheet1 = file1.Sheets["Sheet1"]
+    const worksheet2 = file2.Sheets["Sheet1"]
+    const data1 = XLSX.utils.sheet_to_json(worksheet1)
+    const data2 = XLSX.utils.sheet_to_json(worksheet2)
+
+    //JavaScript manipulation
+    const newData = [...data1, ...data2]
+    console.log("newData",newData)
+
+    //convert new JSON data to Excel
+    const newWorkbook =XLSX.utils.book_new()
+    const newWorksheet = XLSX.utils.json_to_sheet(newData)
+    XLSX.utils.book_append_sheet(newWorkbook,newWorksheet,"Sheet1")
+    XLSX.writeFile(newWorkbook,"New Data File.xlsx")
+
+    //export file
+    var options = { bookType:'xlsx', bookSST:false, type:'array' };
+
+    var output = XLSX.write(workbook,options);
+
+    /* the saveAs call downloads a file on the local machine */
+    saveAs(new Blob([output],{type:"application/octet-stream"}), "test.xlsx");
+  };
+
   return (
     <div className={styles.container}>
       <Head>
@@ -13,57 +81,51 @@ export default function Home() {
 
       <main className={styles.main}>
         <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
+          Excel Manipulator
+          {/* Welcome to <a href="https://nextjs.org">Next.js!</a> */}
         </h1>
 
         <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
+          by CQ
+          {/* Get started by editing <code className={styles.code}>pages/index.js</code> */}
         </p>
 
         <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h2>Documentation &rarr;</h2>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h2>Learn &rarr;</h2>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h2>Examples &rarr;</h2>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h2>Deploy &rarr;</h2>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+          <div className={styles.card}>
+            <h2>Excel 1</h2>
+            <input
+              type='file'
+              className={styles.browseButton}
+              id='customFile'
+              onChange={onChange1}
+            />
+          </div>
+          <div className={styles.card}>
+            <h2>Excel 2</h2>
+            <input
+              type='file'
+              className={styles.browseButton}
+              id='customFile'
+              onChange={onChange2}
+            />
+          </div>
+          <button className={styles.submitButton} onClick={onSubmit}>
+            <h1>Proceed</h1>
+          </button>
         </div>
       </main>
-
       <footer className={styles.footer}>
         <a
           href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Powered by{' '}
+          Powered by{" "}
           <span className={styles.logo}>
             <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
           </span>
         </a>
       </footer>
     </div>
-  )
+  );
 }
